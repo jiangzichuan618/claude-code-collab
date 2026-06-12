@@ -1,6 +1,11 @@
 param(
-  [string]$ConfigPath = "$HOME\.codex\config.toml"
+  [string]$ConfigPath
 )
+
+if (-not $ConfigPath) {
+  $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
+  $ConfigPath = Join-Path $codexHome "config.toml"
+}
 
 if (-not (Test-Path -LiteralPath $ConfigPath)) {
   Write-Error "Codex config not found: $ConfigPath"
@@ -15,7 +20,7 @@ $text = [regex]::Replace($text, '(?ms)^\s*\[mcp_servers\.claude_code_bridge\]\s*
 $text = [regex]::Replace($text, '(?ms)^\s*\[mcp_servers\.claude_code_bridge\.env\]\s*\r?\n.*?(?=^\s*\[|\z)', '')
 $text = [regex]::Replace($text, "(\r?\n){3,}", "`r`n`r`n").TrimEnd() + "`r`n"
 
-Set-Content -LiteralPath $ConfigPath -Value $text -Encoding UTF8
+[System.IO.File]::WriteAllText($ConfigPath, $text, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Removed claude_code_bridge from $ConfigPath"
 Write-Host "Backup: $backup"

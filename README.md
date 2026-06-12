@@ -26,10 +26,12 @@ $dest = "$HOME\.codex\skills\claude-code-collab"
 Copy-Item -Recurse . $dest
 ```
 
+The bridge registration script requires Node.js. If `node` is not on PATH, use the Node executable bundled with Codex or install Node.js before running the registration command.
+
 Preview the MCP bridge config with an explicit workspace root. This does not modify Codex config:
 
 ```powershell
-node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root C:\path\to\workspace
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root "C:\path\to\workspace"
 ```
 
 On macOS/Linux:
@@ -41,10 +43,10 @@ node "$HOME/.codex/skills/claude-code-collab/scripts/install-bridge.mjs" --root 
 To let the script update `~/.codex/config.toml`, opt in explicitly:
 
 ```powershell
-node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root C:\path\to\workspace --apply
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root "C:\path\to\workspace" --apply
 ```
 
-Restart Codex after installing.
+Restart Codex after applying bridge changes.
 
 Check or remove the bridge registration:
 
@@ -59,11 +61,14 @@ If Node is not available on Windows, remove the bridge with PowerShell:
 powershell -ExecutionPolicy Bypass -File "$HOME\.codex\skills\claude-code-collab\scripts\remove-bridge.ps1"
 ```
 
-Use `--uninstall` if Codex fails to start after registering the bridge, then restart Codex. The installer creates a timestamped `config.toml.backup...` before every change.
+Use `--uninstall` or `remove-bridge.ps1` if Codex fails to start after registering the bridge, then restart Codex. If neither command can run, restore the newest `config.toml.backup...` from before the install or manually delete only `[mcp_servers.claude_code_bridge]` and `[mcp_servers.claude_code_bridge.env]`.
+
+The installer checks the existing and updated config before writing. If `config.toml` is already malformed, it aborts without modifying the file.
 
 ## Prerequisites
 
 - Codex with MCP support.
+- Node.js for bridge registration and for the MCP bridge process. Codex-bundled Node can be used if available.
 - Claude Code CLI installed.
 - Claude Code configured with official auth or an API gateway in the user's own `.claude/settings.json`.
 

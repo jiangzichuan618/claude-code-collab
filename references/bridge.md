@@ -12,6 +12,7 @@ claude-code-collab/
   scripts/
     server.mjs
     install-bridge.mjs
+    remove-bridge.ps1
 ```
 
 `server.mjs` exposes these MCP tools:
@@ -24,6 +25,7 @@ claude-code-collab/
 ## User Prerequisites
 
 - Codex with MCP support.
+- Node.js for bridge registration and for the MCP bridge process. Codex-bundled Node can be used if available.
 - Claude Code CLI installed. On Windows, the bridge requires a real `claude.exe`; do not point `CLAUDE_CODE_PATH` at a `.cmd` or `.bat` wrapper.
 - Claude Code configured with either official auth or API gateway environment variables in the user's own `.claude/settings.json`.
 
@@ -45,7 +47,7 @@ Do not commit this settings file or any real key.
 After installing the skill under the user's Codex skills directory, preview the bridge config:
 
 ```powershell
-node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --root C:\path\to\workspace
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root "C:\path\to\workspace"
 ```
 
 On macOS/Linux:
@@ -59,10 +61,10 @@ The preview command validates the root and prints the TOML block without modifyi
 To let the script update `~/.codex/config.toml`, opt in explicitly:
 
 ```powershell
-node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --root C:\path\to\workspace --apply
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root "C:\path\to\workspace" --apply
 ```
 
-When `--apply` is used, the installer creates a timestamped backup and registers:
+When `--apply` is used, the installer checks the existing and updated config, creates a timestamped backup, and registers:
 
 ```toml
 [mcp_servers.claude_code_bridge]
@@ -76,6 +78,8 @@ CLAUDE_CODE_ALLOWED_ROOTS = "<workspace root>"
 
 Restart Codex after running the installer.
 
+If `config.toml` is already malformed, `--apply` aborts without modifying the file. Fix or restore the Codex config before applying the bridge.
+
 `CLAUDE_CODE_ALLOWED_ROOTS` is required. It is a path-list using the platform path delimiter (`;` on Windows, `:` on macOS/Linux). `cwd` and `add_dir` must resolve inside one of these roots.
 
 The installer refuses home directories, filesystem roots, broad user parent directories such as `C:\Users`, `/Users`, and `/home`, and sensitive config/secret directories as workspace roots. If `--root` is omitted, it uses the current working directory only after applying the same validation.
@@ -83,14 +87,14 @@ The installer refuses home directories, filesystem roots, broad user parent dire
 Check or remove the bridge:
 
 ```powershell
-node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --status
-node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --uninstall
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --status
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --uninstall
 ```
 
 If Node is unavailable on Windows, remove the bridge with:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File $HOME\.codex\skills\claude-code-collab\scripts\remove-bridge.ps1
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\skills\claude-code-collab\scripts\remove-bridge.ps1"
 ```
 
 Use `--uninstall` or `remove-bridge.ps1` if Codex fails to start after bridge registration. Then restart Codex. The installer creates a timestamped `config.toml.backup...` before every config change.
@@ -122,13 +126,13 @@ Restart Codex after adding or editing `[mcp_servers.claude_code_bridge]`.
 Remove only the Claude bridge and restart Codex:
 
 ```powershell
-node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --uninstall
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --uninstall
 ```
 
 If `node` is not available:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File $HOME\.codex\skills\claude-code-collab\scripts\remove-bridge.ps1
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\skills\claude-code-collab\scripts\remove-bridge.ps1"
 ```
 
 If that command cannot run, restore the newest `~\.codex\config.toml.backup...` from before the install, or manually delete `[mcp_servers.claude_code_bridge]` and `[mcp_servers.claude_code_bridge.env]` from `~\.codex\config.toml`.
