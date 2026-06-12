@@ -93,3 +93,12 @@ node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --root C:
 Restart Codex after installation or bridge changes.
 
 The installer writes `CLAUDE_CODE_ALLOWED_ROOTS` for the supplied workspace root. Do not use the user home directory, a filesystem root, a broad user parent such as `C:\Users`, `/Users`, or `/home`, or a secrets/config directory as the root. To allow more workspace roots, edit the MCP server env value after installation.
+
+Check or remove the bridge registration:
+
+```powershell
+node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --status
+node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --uninstall
+```
+
+If Codex fails to start after registration, run `--uninstall` from a terminal and restart Codex. The installer writes timestamped `config.toml.backup...` files before modifying the config.

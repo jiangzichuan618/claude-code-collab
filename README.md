@@ -40,6 +40,15 @@ node "$HOME/.codex/skills/claude-code-collab/scripts/install-bridge.mjs" --root 
 
 Restart Codex after installing.
 
+Check or remove the bridge registration:
+
+```powershell
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --status
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --uninstall
+```
+
+Use `--uninstall` if Codex fails to start after registering the bridge, then restart Codex. The installer creates a timestamped `config.toml.backup...` before every change.
+
 ## Prerequisites
 
 - Codex with MCP support.

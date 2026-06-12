@@ -10,7 +10,7 @@ const skillRoot = path.resolve(path.join(path.dirname(fileURLToPath(import.meta.
 const serverPath = path.join(skillRoot, "scripts", "server.mjs");
 
 function parseArgs(argv) {
-  const args = { root: null };
+  const args = { root: null, uninstall: false, status: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--root") {
@@ -18,12 +18,19 @@ function parseArgs(argv) {
       i += 1;
     } else if (arg.startsWith("--root=")) {
       args.root = arg.slice("--root=".length);
+    } else if (arg === "--uninstall" || arg === "--remove") {
+      args.uninstall = true;
+    } else if (arg === "--status" || arg === "--check") {
+      args.status = true;
     } else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: node scripts/install-bridge.mjs [--root <workspace-root>]");
+      console.log("Usage: node scripts/install-bridge.mjs [--root <workspace-root>] [--status] [--uninstall]");
       process.exit(0);
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
+  }
+  if (args.uninstall && args.status) {
+    throw new Error("--uninstall and --status cannot be used together");
   }
   return args;
 }
@@ -121,6 +128,10 @@ function insertBridgeSection(config, bridgeBlock) {
   return `${config.trimEnd()}\n\n[mcp_servers]\n\n${bridgeBlock.trimEnd()}`;
 }
 
+function hasBridgeSection(config) {
+  return /^\s*\[mcp_servers\.claude_code_bridge\]\s*$/m.test(config);
+}
+
 if (!fs.existsSync(configPath)) {
   throw new Error(`Codex config not found: ${configPath}`);
 }
@@ -128,12 +139,32 @@ if (!fs.existsSync(serverPath)) {
   throw new Error(`Bridge server not found: ${serverPath}`);
 }
 
+const args = parseArgs(process.argv.slice(2));
 const original = fs.readFileSync(configPath, "utf8");
+
+if (args.status) {
+  if (hasBridgeSection(original)) {
+    console.log(`claude_code_bridge is registered in ${configPath}`);
+  } else {
+    console.log(`claude_code_bridge is not registered in ${configPath}`);
+  }
+  process.exit(0);
+}
+
 const backup = `${configPath}.backup.${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 17)}`;
 fs.writeFileSync(backup, original, "utf8");
 
+if (args.uninstall) {
+  const updated = removeBridgeSections(original);
+  fs.writeFileSync(configPath, updated, "utf8");
+  console.log(`Removed claude_code_bridge from ${configPath}`);
+  console.log(`Backup: ${backup}`);
+  console.log("Restart Codex to apply the change.");
+  process.exit(0);
+}
+
 const nodePath = findNodePath(original);
-const requestedRoot = parseArgs(process.argv.slice(2)).root || process.cwd();
+const requestedRoot = args.root || process.cwd();
 const allowedRoot = validateAllowedRoot(requestedRoot);
 const nextBlock = block(nodePath, allowedRoot);
 const updated = insertBridgeSection(removeBridgeSections(original), nextBlock);

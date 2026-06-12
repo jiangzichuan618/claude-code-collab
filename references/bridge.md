@@ -72,6 +72,15 @@ Restart Codex after running the installer.
 
 The installer refuses home directories, filesystem roots, broad user parent directories such as `C:\Users`, `/Users`, and `/home`, and sensitive config/secret directories as workspace roots. If `--root` is omitted, it uses the current working directory only after applying the same validation.
 
+Check or remove the bridge:
+
+```powershell
+node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --status
+node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --uninstall
+```
+
+Use `--uninstall` if Codex fails to start after bridge registration. Then restart Codex. The installer creates a timestamped `config.toml.backup...` before every config change.
+
 ## Quick Checks
 
 Check Claude Code:
@@ -93,6 +102,16 @@ Read `modelUsage` in the JSON output.
 ### Tool unavailable in Codex
 
 Restart Codex after adding or editing `[mcp_servers.claude_code_bridge]`.
+
+### Codex fails to start after registration
+
+Remove only the Claude bridge and restart Codex:
+
+```powershell
+node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --uninstall
+```
+
+If that command cannot run, restore the newest `~\.codex\config.toml.backup...` from before the install, or manually delete `[mcp_servers.claude_code_bridge]` and `[mcp_servers.claude_code_bridge.env]` from `~\.codex\config.toml`.
 
 ### `claude` is not found
 
