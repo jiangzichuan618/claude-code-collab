@@ -26,7 +26,7 @@ $dest = "$HOME\.codex\skills\claude-code-collab"
 Copy-Item -Recurse . $dest
 ```
 
-Register the MCP bridge with an explicit workspace root:
+Preview the MCP bridge config with an explicit workspace root. This does not modify Codex config:
 
 ```powershell
 node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root C:\path\to\workspace
@@ -38,6 +38,12 @@ On macOS/Linux:
 node "$HOME/.codex/skills/claude-code-collab/scripts/install-bridge.mjs" --root /path/to/workspace
 ```
 
+To let the script update `~/.codex/config.toml`, opt in explicitly:
+
+```powershell
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root C:\path\to\workspace --apply
+```
+
 Restart Codex after installing.
 
 Check or remove the bridge registration:
@@ -45,6 +51,12 @@ Check or remove the bridge registration:
 ```powershell
 node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --status
 node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --uninstall
+```
+
+If Node is not available on Windows, remove the bridge with PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\skills\claude-code-collab\scripts\remove-bridge.ps1"
 ```
 
 Use `--uninstall` if Codex fails to start after registering the bridge, then restart Codex. The installer creates a timestamped `config.toml.backup...` before every change.

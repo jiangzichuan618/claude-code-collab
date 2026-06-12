@@ -42,7 +42,7 @@ Do not commit this settings file or any real key.
 
 ## Register The Bridge
 
-After installing the skill under the user's Codex skills directory, run:
+After installing the skill under the user's Codex skills directory, preview the bridge config:
 
 ```powershell
 node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --root C:\path\to\workspace
@@ -54,7 +54,15 @@ On macOS/Linux:
 node "$HOME/.codex/skills/claude-code-collab/scripts/install-bridge.mjs" --root /path/to/workspace
 ```
 
-The installer updates `~/.codex/config.toml`, creates a timestamped backup, and registers:
+The preview command validates the root and prints the TOML block without modifying `~/.codex/config.toml`.
+
+To let the script update `~/.codex/config.toml`, opt in explicitly:
+
+```powershell
+node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --root C:\path\to\workspace --apply
+```
+
+When `--apply` is used, the installer creates a timestamped backup and registers:
 
 ```toml
 [mcp_servers.claude_code_bridge]
@@ -79,7 +87,13 @@ node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --status
 node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --uninstall
 ```
 
-Use `--uninstall` if Codex fails to start after bridge registration. Then restart Codex. The installer creates a timestamped `config.toml.backup...` before every config change.
+If Node is unavailable on Windows, remove the bridge with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File $HOME\.codex\skills\claude-code-collab\scripts\remove-bridge.ps1
+```
+
+Use `--uninstall` or `remove-bridge.ps1` if Codex fails to start after bridge registration. Then restart Codex. The installer creates a timestamped `config.toml.backup...` before every config change.
 
 ## Quick Checks
 
@@ -109,6 +123,12 @@ Remove only the Claude bridge and restart Codex:
 
 ```powershell
 node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --uninstall
+```
+
+If `node` is not available:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File $HOME\.codex\skills\claude-code-collab\scripts\remove-bridge.ps1
 ```
 
 If that command cannot run, restore the newest `~\.codex\config.toml.backup...` from before the install, or manually delete `[mcp_servers.claude_code_bridge]` and `[mcp_servers.claude_code_bridge.env]` from `~\.codex\config.toml`.

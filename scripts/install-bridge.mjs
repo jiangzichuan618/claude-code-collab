@@ -10,7 +10,7 @@ const skillRoot = path.resolve(path.join(path.dirname(fileURLToPath(import.meta.
 const serverPath = path.join(skillRoot, "scripts", "server.mjs");
 
 function parseArgs(argv) {
-  const args = { root: null, uninstall: false, status: false };
+  const args = { root: null, apply: false, uninstall: false, status: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--root") {
@@ -18,12 +18,14 @@ function parseArgs(argv) {
       i += 1;
     } else if (arg.startsWith("--root=")) {
       args.root = arg.slice("--root=".length);
+    } else if (arg === "--apply") {
+      args.apply = true;
     } else if (arg === "--uninstall" || arg === "--remove") {
       args.uninstall = true;
     } else if (arg === "--status" || arg === "--check") {
       args.status = true;
     } else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: node scripts/install-bridge.mjs [--root <workspace-root>] [--status] [--uninstall]");
+      console.log("Usage: node scripts/install-bridge.mjs [--root <workspace-root>] [--apply] [--status] [--uninstall]");
       process.exit(0);
     } else {
       throw new Error(`Unknown argument: ${arg}`);
@@ -36,7 +38,7 @@ function parseArgs(argv) {
 }
 
 function findNodePath(config) {
-  const match = config.match(/NODE_REPL_NODE_PATH\s*=\s*'([^']+)'/);
+  const match = (config || "").match(/NODE_REPL_NODE_PATH\s*=\s*'([^']+)'/);
   if (match) return match[1];
   return process.execPath || "node";
 }
@@ -121,29 +123,24 @@ function removeBridgeSections(config) {
 }
 
 function insertBridgeSection(config, bridgeBlock) {
-  const rootRe = /^\[mcp_servers\]\s*$/m;
-  if (rootRe.test(config)) {
-    return config.replace(rootRe, `[mcp_servers]\n\n${bridgeBlock.trimEnd()}`);
-  }
-  return `${config.trimEnd()}\n\n[mcp_servers]\n\n${bridgeBlock.trimEnd()}`;
+  return `${config.trimEnd()}\n\n${bridgeBlock.trimEnd()}`;
 }
 
 function hasBridgeSection(config) {
   return /^\s*\[mcp_servers\.claude_code_bridge\]\s*$/m.test(config);
 }
 
-if (!fs.existsSync(configPath)) {
-  throw new Error(`Codex config not found: ${configPath}`);
-}
 if (!fs.existsSync(serverPath)) {
   throw new Error(`Bridge server not found: ${serverPath}`);
 }
 
 const args = parseArgs(process.argv.slice(2));
-const original = fs.readFileSync(configPath, "utf8");
+const original = fs.existsSync(configPath) ? fs.readFileSync(configPath, "utf8") : "";
 
 if (args.status) {
-  if (hasBridgeSection(original)) {
+  if (!original) {
+    console.log(`Codex config not found: ${configPath}`);
+  } else if (hasBridgeSection(original)) {
     console.log(`claude_code_bridge is registered in ${configPath}`);
   } else {
     console.log(`claude_code_bridge is not registered in ${configPath}`);
@@ -151,10 +148,10 @@ if (args.status) {
   process.exit(0);
 }
 
-const backup = `${configPath}.backup.${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 17)}`;
-fs.writeFileSync(backup, original, "utf8");
-
 if (args.uninstall) {
+  if (!original) throw new Error(`Codex config not found: ${configPath}`);
+  const backup = `${configPath}.backup.${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 17)}`;
+  fs.writeFileSync(backup, original, "utf8");
   const updated = removeBridgeSections(original);
   fs.writeFileSync(configPath, updated, "utf8");
   console.log(`Removed claude_code_bridge from ${configPath}`);
@@ -167,6 +164,22 @@ const nodePath = findNodePath(original);
 const requestedRoot = args.root || process.cwd();
 const allowedRoot = validateAllowedRoot(requestedRoot);
 const nextBlock = block(nodePath, allowedRoot);
+
+if (!args.apply) {
+  console.log("Dry run: no files were modified.");
+  console.log(`Allowed root: ${allowedRoot}`);
+  console.log("");
+  console.log(`To register the bridge manually, add this block to ${configPath}:`);
+  console.log("");
+  console.log(nextBlock.trimEnd());
+  console.log("");
+  console.log("To let this script update the Codex config, rerun the command with --apply.");
+  process.exit(0);
+}
+
+if (!original) throw new Error(`Codex config not found: ${configPath}`);
+const backup = `${configPath}.backup.${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 17)}`;
+fs.writeFileSync(backup, original, "utf8");
 const updated = insertBridgeSection(removeBridgeSections(original), nextBlock);
 
 fs.writeFileSync(configPath, updated, "utf8");

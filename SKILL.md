@@ -84,10 +84,18 @@ For detailed prompt templates and troubleshooting, read:
 
 ## Installation For New Machines
 
-This skill includes the MCP bridge at `scripts/server.mjs`. To register it with Codex on a machine where the skill is installed, run:
+This skill includes the MCP bridge at `scripts/server.mjs`. Preview the bridge config on a machine where the skill is installed:
 
 ```powershell
 node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --root C:\path\to\workspace
+```
+
+The preview command prints the TOML block and does not modify `~/.codex/config.toml`.
+
+To let the script update Codex config, opt in explicitly:
+
+```powershell
+node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --root C:\path\to\workspace --apply
 ```
 
 Restart Codex after installation or bridge changes.
@@ -101,4 +109,10 @@ node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --status
 node $HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs --uninstall
 ```
 
-If Codex fails to start after registration, run `--uninstall` from a terminal and restart Codex. The installer writes timestamped `config.toml.backup...` files before modifying the config.
+If Node is unavailable on Windows, remove the bridge with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File $HOME\.codex\skills\claude-code-collab\scripts\remove-bridge.ps1
+```
+
+If Codex fails to start after registration, run `--uninstall` or `remove-bridge.ps1` from a terminal and restart Codex. The installer writes timestamped `config.toml.backup...` files before modifying the config.
