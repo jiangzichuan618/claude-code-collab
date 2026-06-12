@@ -5,6 +5,12 @@ import os from "node:os";
 
 const serverName = "claude-code-collab";
 const genericToolName = "ask_claude_code";
+const toolAliases = {
+  claude_code_ask: "ask_claude_code",
+  claude_code_review: "review_with_claude_code",
+  claude_code_edit: "edit_with_claude_code",
+  claude_code_compare: "compare_with_claude_code",
+};
 
 function readJsonFile(filePath) {
   try {
@@ -314,6 +320,7 @@ function listBlock(label, values) {
 }
 
 function specializedPrompt(toolName, args = {}) {
+  toolName = canonicalToolName(toolName);
   const task = typeof args.task === "string" && args.task.trim() ? args.task.trim() : args.prompt?.trim();
   if (!task) throw new Error("task or prompt is required");
   const cwd = typeof args.cwd === "string" && args.cwd.trim() ? args.cwd.trim() : process.cwd();
@@ -381,6 +388,10 @@ function specializedPrompt(toolName, args = {}) {
   return task;
 }
 
+function canonicalToolName(toolName) {
+  return toolAliases[toolName] || toolName;
+}
+
 function toolDefinitions() {
   const commonProperties = {
     cwd: { type: "string" },
@@ -402,7 +413,7 @@ function toolDefinitions() {
     timeout_ms: commonProperties.timeout_ms,
     add_dir: commonProperties.add_dir,
   };
-  return [
+  const canonicalTools = [
     {
       name: genericToolName,
       description:
@@ -459,9 +470,37 @@ function toolDefinitions() {
       },
     },
   ];
+  const aliasTools = [
+    {
+      ...canonicalTools[0],
+      name: "claude_code_ask",
+      description:
+        "Alias for ask_claude_code. Run Claude Code from Codex with a caller-provided prompt.",
+    },
+    {
+      ...canonicalTools[1],
+      name: "claude_code_review",
+      description:
+        "Alias for review_with_claude_code. Ask Claude Code for a second-opinion review without editing files.",
+    },
+    {
+      ...canonicalTools[2],
+      name: "claude_code_edit",
+      description:
+        "Alias for edit_with_claude_code. Ask Claude Code to make code edits only after explicit user permission.",
+    },
+    {
+      ...canonicalTools[3],
+      name: "claude_code_compare",
+      description:
+        "Alias for compare_with_claude_code. Ask Claude Code to compare against Codex's view or plan.",
+    },
+  ];
+  return [...canonicalTools, ...aliasTools];
 }
 
 function argumentsForTool(toolName, args = {}) {
+  toolName = canonicalToolName(toolName);
   if (toolName === genericToolName) return args;
   const permissionMode = toolName === "edit_with_claude_code" ? "acceptEdits" : "plan";
   const safeArgs = { ...args };
@@ -526,14 +565,15 @@ function handleRequest(msg) {
     return;
   }
   if (method === "tools/call") {
+    const requestedName = params?.name;
     const names = new Set(toolDefinitions().map((tool) => tool.name));
-    if (!names.has(params?.name)) {
+    if (!names.has(requestedName)) {
       send({ jsonrpc: "2.0", id, error: { code: -32602, message: `Unknown tool: ${params?.name}` } });
       return;
     }
     let toolArgs;
     try {
-      toolArgs = argumentsForTool(params.name, params?.arguments || {});
+      toolArgs = argumentsForTool(requestedName, params?.arguments || {});
     } catch (err) {
       send({ jsonrpc: "2.0", id, error: { code: -32602, message: err?.message || String(err) } });
       return;

@@ -83,6 +83,15 @@ The MCP bridge exposes:
 - `edit_with_claude_code`
 - `compare_with_claude_code`
 
+It also exposes service-prefixed aliases:
+
+- `claude_code_ask`
+- `claude_code_review`
+- `claude_code_edit`
+- `claude_code_compare`
+
+If Codex does not expose the MCP tools in a given session, Codex can still call Claude Code through the local `claude` CLI when it is installed and configured. The skill instructs Codex to label this as CLI fallback rather than MCP.
+
 ## Safety Defaults
 
 - Read-only review is the default.

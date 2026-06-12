@@ -7,9 +7,10 @@ import { fileURLToPath } from "node:url";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const installer = path.join(scriptDir, "install-bridge.mjs");
 const remover = path.join(scriptDir, "remove-bridge.ps1");
-const root = path.resolve(path.join(scriptDir, ".."));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "claude-bridge-test-"));
+const root = path.join(tmp, "workspace");
 const configPath = path.join(tmp, "config.toml");
+fs.mkdirSync(root, { recursive: true });
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {

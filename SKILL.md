@@ -16,7 +16,20 @@ Prefer these MCP tools when available:
 - `edit_with_claude_code`: allow Claude Code to edit files. Use only when the user explicitly permits edits.
 - `ask_claude_code`: custom prompt escape hatch with restricted permission modes.
 
-If the tools are unavailable, read `references/bridge.md` and report the missing bridge instead of pretending Claude was called.
+Service-prefixed aliases may also be exposed:
+
+- `claude_code_review`
+- `claude_code_compare`
+- `claude_code_edit`
+- `claude_code_ask`
+
+If the MCP tools are unavailable, do not stop immediately. First check whether the local Claude Code CLI is available with `where claude` on Windows or `command -v claude` on macOS/Linux. If it is available, use a non-interactive CLI fallback such as:
+
+```powershell
+claude -p "<prompt>" --input-format text --output-format json --permission-mode plan --no-session-persistence
+```
+
+Report clearly that Claude was called through CLI fallback rather than MCP. If neither MCP tools nor Claude CLI are available, read `references/bridge.md` and report the missing bridge instead of pretending Claude was called.
 
 ## Default Flow
 

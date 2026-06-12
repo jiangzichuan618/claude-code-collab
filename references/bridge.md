@@ -22,6 +22,13 @@ claude-code-collab/
 - `edit_with_claude_code`
 - `compare_with_claude_code`
 
+It also exposes service-prefixed aliases:
+
+- `claude_code_ask`
+- `claude_code_review`
+- `claude_code_edit`
+- `claude_code_compare`
+
 ## User Prerequisites
 
 - Codex with MCP support.
@@ -120,6 +127,15 @@ Read `modelUsage` in the JSON output.
 ### Tool unavailable in Codex
 
 Restart Codex after adding or editing `[mcp_servers.claude_code_bridge]`.
+
+If the bridge process is running but the MCP tools are not exposed in the current Codex session, use Claude Code CLI fallback when available:
+
+```powershell
+where claude
+claude -p "Reply exactly OK." --output-format json --permission-mode plan --no-session-persistence
+```
+
+Report fallback honestly as CLI fallback, not MCP.
 
 ### Codex fails to start after registration
 
