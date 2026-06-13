@@ -2,6 +2,17 @@
 
 This skill is publishable as a folder. It does not bundle Claude Code, API keys, or provider credentials. Users must install and configure Claude Code separately.
 
+## Current Capability Positioning
+
+Use CLI fallback as the reliable baseline. Treat the MCP bridge as an optional enhancement.
+
+The bridge can start and list tools in local tests while a Codex Desktop session still does not expose custom MCP tools to the model. In that case, call Claude Code through the local `claude` CLI and report that the call used CLI fallback, not MCP.
+
+Windows distinction:
+
+- CLI fallback can work through the user's normal `claude` command, which may resolve to `claude.cmd`.
+- MCP bridge process execution intentionally requires a real `claude.exe`; do not set `CLAUDE_CODE_PATH` to a `.cmd` or `.bat` wrapper.
+
 ## Included Files
 
 ```text
@@ -31,10 +42,10 @@ It also exposes service-prefixed aliases:
 
 ## User Prerequisites
 
-- Codex with MCP support.
-- Node.js for bridge registration and for the MCP bridge process. Codex-bundled Node can be used if available.
-- Claude Code CLI installed. On Windows, the bridge requires a real `claude.exe`; do not point `CLAUDE_CODE_PATH` at a `.cmd` or `.bat` wrapper.
+- Codex with skills enabled.
+- Claude Code CLI installed.
 - Claude Code configured with either official auth or API gateway environment variables in the user's own `.claude/settings.json`.
+- Node.js only if using the optional MCP bridge. Codex-bundled Node can be used if available.
 
 For API gateway usage, `.claude/settings.json` commonly contains:
 
@@ -49,9 +60,17 @@ For API gateway usage, `.claude/settings.json` commonly contains:
 
 Do not commit this settings file or any real key.
 
+Before installing the bridge for a classmate, verify Claude Code itself:
+
+```powershell
+claude -p "Reply exactly OK." --output-format json --permission-mode plan --no-session-persistence
+```
+
+If this fails, fix Claude Code configuration, gateway routing, supported model names, or billing first. Installing the skill cannot create Claude access.
+
 ## Register The Bridge
 
-After installing the skill under the user's Codex skills directory, preview the bridge config:
+After installing the skill under the user's Codex skills directory, preview the optional bridge config:
 
 ```powershell
 node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root "C:\path\to\workspace"
@@ -85,7 +104,7 @@ CLAUDE_CODE_ALLOWED_ROOTS = "<workspace root>"
 
 Restart Codex after running the installer.
 
-If `config.toml` is already malformed, `--apply` aborts without modifying the file. Fix or restore the Codex config before applying the bridge.
+The installer runs a conservative config safety check before writing. If `config.toml` is malformed, or uses TOML syntax outside this conservative checker, `--apply` aborts without modifying the file. Fix or restore the Codex config before applying the bridge.
 
 `CLAUDE_CODE_ALLOWED_ROOTS` is required. It is a path-list using the platform path delimiter (`;` on Windows, `:` on macOS/Linux). `cwd` and `add_dir` must resolve inside one of these roots.
 
@@ -155,7 +174,9 @@ If that command cannot run, restore the newest `~\.codex\config.toml.backup...` 
 
 ### `claude` is not found
 
-Install Claude Code, add the real executable to PATH, or set `CLAUDE_CODE_PATH` to the Claude executable before starting Codex. On Windows, use `claude.exe`, not `claude.cmd`.
+For CLI fallback, install Claude Code and ensure `claude` works in a terminal.
+
+For MCP bridge, add the real executable to PATH or set `CLAUDE_CODE_PATH` to the Claude executable before starting Codex. On Windows, use `claude.exe`, not `claude.cmd`.
 
 ### API or billing error
 
@@ -183,6 +204,7 @@ Run focused validation where practical.
 - `continue_session` is opt-in.
 - `continue_session` may reuse earlier Claude-side context. Use it only when the user explicitly wants continuity for the same task.
 - The bridge does not expose `bypassPermissions`, `dontAsk`, or arbitrary extra CLI args.
+- Generic `ask_claude_code` cannot request `acceptEdits`; edit mode is reserved for `edit_with_claude_code`.
 - Paths are canonicalized with real paths before being passed to Claude Code and must be inside explicitly configured allowed workspace roots.
 
 ## Publishing Notes

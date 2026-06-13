@@ -425,7 +425,7 @@ function toolDefinitions() {
           prompt: { type: "string" },
           permission_mode: {
             type: "string",
-            enum: ["plan", "default", "acceptEdits"],
+            enum: ["plan", "default"],
           },
           ...commonProperties,
         },
@@ -501,7 +501,12 @@ function toolDefinitions() {
 
 function argumentsForTool(toolName, args = {}) {
   toolName = canonicalToolName(toolName);
-  if (toolName === genericToolName) return args;
+  if (toolName === genericToolName) {
+    if (args.permission_mode === "acceptEdits") {
+      throw new Error("acceptEdits is only available through edit_with_claude_code after explicit user permission.");
+    }
+    return args;
+  }
   const permissionMode = toolName === "edit_with_claude_code" ? "acceptEdits" : "plan";
   const safeArgs = { ...args };
   delete safeArgs.extra_args;
@@ -547,7 +552,7 @@ function handleRequest(msg) {
       id,
       result: {
         protocolVersion: params?.protocolVersion || "2024-11-05",
-        serverInfo: { name: serverName, version: "1.1.0" },
+        serverInfo: { name: serverName, version: "1.2.0" },
         capabilities: { tools: {} },
       },
     });

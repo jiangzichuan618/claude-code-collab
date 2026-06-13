@@ -77,7 +77,7 @@ After editing, return:
 4. Remaining risks
 ```
 
-Use with `permission_mode: "acceptEdits"` only after explicit user permission.
+Use only after explicit user permission. In MCP mode, prefer `edit_with_claude_code`; do not try to enable edits through generic `ask_claude_code`.
 
 ## Codex-Claude Comparison
 

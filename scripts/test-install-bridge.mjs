@@ -71,7 +71,15 @@ NODE_REPL_NODE_PATH = 'C:\\Users\\leluan\\AppData\\Local\\OpenAI\\Codex\\bin\\no
 `;
 
 try {
+  const missingStatus = run(process.execPath, [installer, "--status"]);
+  assert(missingStatus.status === 0, `missing-config status failed: ${missingStatus.stderr || missingStatus.stdout}`);
+  assert(missingStatus.stdout.includes("Codex config not found"), "missing-config status did not explain config absence");
+
   writeConfig(validConfig);
+  const cleanStatus = run(process.execPath, [installer, "--status"]);
+  assert(cleanStatus.status === 0, `clean status failed: ${cleanStatus.stderr || cleanStatus.stdout}`);
+  assert(cleanStatus.stdout.includes("is not registered"), "clean status did not report unregistered bridge");
+
   const before = readConfig();
   const dryRun = run(process.execPath, [installer, "--root", root]);
   assert(dryRun.status === 0, `dry-run failed: ${dryRun.stderr || dryRun.stdout}`);
@@ -82,6 +90,15 @@ try {
   assert(apply.status === 0, `apply failed: ${apply.stderr || apply.stdout}`);
   assert(readConfig().includes("[mcp_servers.claude_code_bridge]"), "apply did not add bridge section");
   assert(readConfig().includes("[mcp_servers.node_repl]"), "apply removed unrelated MCP section");
+
+  const registeredStatus = run(process.execPath, [installer, "--status"]);
+  assert(registeredStatus.status === 0, `registered status failed: ${registeredStatus.stderr || registeredStatus.stdout}`);
+  assert(registeredStatus.stdout.includes("is registered"), "registered status did not report bridge");
+
+  const secondApply = run(process.execPath, [installer, "--root", root, "--apply"]);
+  assert(secondApply.status === 0, `second apply failed: ${secondApply.stderr || secondApply.stdout}`);
+  const bridgeHeaders = readConfig().match(/^\s*\[mcp_servers\.claude_code_bridge\]\s*$/gm) || [];
+  assert(bridgeHeaders.length === 1, "second apply left duplicate bridge sections");
 
   const uninstall = run(process.execPath, [installer, "--uninstall"]);
   assert(uninstall.status === 0, `uninstall failed: ${uninstall.stderr || uninstall.stdout}`);

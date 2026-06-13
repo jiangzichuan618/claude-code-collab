@@ -1,6 +1,17 @@
 # Claude Code Collaboration Skill for Codex
 
-`claude-code-collab` is a Codex skill plus MCP bridge that lets Codex call Claude Code as a second coding agent.
+`claude-code-collab` is a Codex skill for using Claude Code as an explicit second coding agent from a Codex workflow.
+
+The reliable baseline is Claude Code CLI fallback. The optional MCP bridge is included, but Codex Desktop may not expose custom MCP bridge tools to the model in every session even when the server starts and lists tools correctly.
+
+## Capability Matrix
+
+| Capability | Status | Notes |
+| --- | --- | --- |
+| Claude CLI fallback | Supported | Requires a working local `claude` command. Codex can run `claude -p ...` and report that it used CLI fallback. |
+| MCP bridge tools | Experimental | The bridge can expose tools, but the current Codex surface may not make custom MCP tools available to the model. |
+| Read-only second opinion | Supported | Default mode. Uses `--permission-mode plan` and non-persistent Claude sessions. |
+| Claude edits files | Explicit opt-in | Use only through `edit_with_claude_code` or an explicit user-approved CLI command. |
 
 It supports:
 
@@ -17,16 +28,26 @@ This repository does not include Claude Code, API keys, provider credentials, or
 
 Users must install and configure Claude Code separately.
 
-## Install
+## Safe Install For Classmates
 
-Copy this folder into your Codex skills directory:
+First verify Claude Code works outside Codex:
+
+```powershell
+claude -p "Reply exactly OK." --output-format json --permission-mode plan --no-session-persistence
+```
+
+If this fails, fix Claude Code, the API gateway, or billing before installing the skill.
+
+Then install the skill folder into Codex:
 
 ```powershell
 $dest = "$HOME\.codex\skills\claude-code-collab"
 Copy-Item -Recurse . $dest
 ```
 
-The bridge registration script requires Node.js. If `node` is not on PATH, use the Node executable bundled with Codex or install Node.js before running the registration command.
+Restart Codex. At this point the skill can still guide Codex to use CLI fallback even without MCP bridge registration.
+
+## Optional MCP Bridge
 
 Preview the MCP bridge config with an explicit workspace root. This does not modify Codex config:
 
@@ -39,6 +60,8 @@ On macOS/Linux:
 ```bash
 node "$HOME/.codex/skills/claude-code-collab/scripts/install-bridge.mjs" --root /path/to/workspace
 ```
+
+The bridge registration script requires Node.js. If `node` is not on PATH, use the Node executable bundled with Codex or install Node.js before running the registration command.
 
 To let the script update `~/.codex/config.toml`, opt in explicitly:
 
@@ -63,14 +86,14 @@ powershell -ExecutionPolicy Bypass -File "$HOME\.codex\skills\claude-code-collab
 
 Use `--uninstall` or `remove-bridge.ps1` if Codex fails to start after registering the bridge, then restart Codex. If neither command can run, restore the newest `config.toml.backup...` from before the install or manually delete only `[mcp_servers.claude_code_bridge]` and `[mcp_servers.claude_code_bridge.env]`.
 
-The installer checks the existing and updated config before writing. If `config.toml` is already malformed, it aborts without modifying the file.
+The installer runs a conservative config safety check before writing. If `config.toml` is malformed, or uses TOML syntax outside this conservative checker, `--apply` aborts without modifying the file.
 
 ## Prerequisites
 
-- Codex with MCP support.
-- Node.js for bridge registration and for the MCP bridge process. Codex-bundled Node can be used if available.
 - Claude Code CLI installed.
 - Claude Code configured with official auth or an API gateway in the user's own `.claude/settings.json`.
+- Codex with skills enabled.
+- Node.js only if using the optional MCP bridge. Codex-bundled Node can be used if available.
 
 On Windows, the bridge requires a real `claude.exe`; do not point `CLAUDE_CODE_PATH` at a `.cmd` or `.bat` wrapper.
 
@@ -99,7 +122,19 @@ If Codex does not expose the MCP tools in a given session, Codex can still call 
 - Sessions are non-persistent by default.
 - `continue_session` is opt-in.
 - `bypassPermissions`, `dontAsk`, and arbitrary extra CLI args are not exposed.
+- Generic `ask_claude_code` cannot request `acceptEdits`; edit mode is reserved for the explicit edit tool.
 - `cwd` and `add_dir` are canonicalized with real paths and must be inside `CLAUDE_CODE_ALLOWED_ROOTS`.
+
+## Manual Smoke Tests
+
+Run these before giving the skill to someone else:
+
+```powershell
+claude --version
+claude -p "Reply exactly OK." --output-format json --permission-mode plan --no-session-persistence
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --status
+node "$HOME\.codex\skills\claude-code-collab\scripts\install-bridge.mjs" --root "C:\path\to\workspace"
+```
 
 ## License
 

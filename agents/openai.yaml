@@ -1,4 +1,4 @@
 interface:
   display_name: "Claude Code Collaboration"
-  short_description: "Use Claude Code from Codex as a second coding agent."
-  default_prompt: "Use Claude Code to review this plan and reconcile its feedback with your own judgment."
+  short_description: "Consult local Claude Code from Codex as a second coding agent."
+  default_prompt: "Consult Claude Code if available, then reconcile its feedback with your own judgment."
